@@ -14,7 +14,7 @@ use tonic::Request;
 use tower::ServiceExt;
 use pact_protobuf_plugin::dynamic_message::{DynamicMessage, PactCodec};
 use pact_protobuf_plugin::message_decoder::{ProtobufField, ProtobufFieldData};
-use pact_protobuf_plugin::utils::find_message_type_by_name;
+use pact_protobuf_plugin::utils::{find_message_descriptor_for_type};
 
 async fn mock_server_block() {
   let mut pact_builder = PactBuilderAsync::new_v4("null-and-void", "protobuf-plugin");
@@ -91,6 +91,8 @@ async fn each_value_matcher() {
     .await;
 
   let url = mock_server.url();
+  // unlike what's under /tests dir, this encoded descriptor does NOT have a package specified
+  // somehow it's still compatible cause the test passes
   let descriptors = base64::engine::general_purpose::STANDARD.decode(
     "CogCCgxzaW1wbGUucHJvdG8iGwoJTWVzc2FnZUluEg4KAmluGAEgASgIUgJpbiIeCgpNZXNzYWdlT3V0EhAKA291\
     dBgBIAEoCFIDb3V0IicKD1ZhbHVlc01lc3NhZ2VJbhIUCgV2YWx1ZRgBIAMoCVIFdmFsdWUiKAoQVmFsdWVzTWVzc2FnZU\
@@ -122,8 +124,10 @@ async fn each_value_matcher() {
     .unwrap();
   conn.ready().await.unwrap();
 
-  let (input_message, _) = find_message_type_by_name("ValuesMessageIn", &fds).unwrap();
-  let (output_message, _) = find_message_type_by_name("ValuesMessageOut", &fds).unwrap();
+  let (input_message, _) = find_message_descriptor_for_type(".ValuesMessageIn", &fds).unwrap();
+  // searching by name without package next, to confirm we're backwards compatible 
+  // (it's verified by unit tests too, but wouldn't hurt to check here as well)
+  let (output_message, _) = find_message_descriptor_for_type("ValuesMessageOut", &fds).unwrap();
   let interaction = pact_builder.build()
     .interactions().first().unwrap()
     .as_v4_sync_message().unwrap();

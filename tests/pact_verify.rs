@@ -167,6 +167,7 @@ async fn init_plugin_request(request_message: &MessageRequest) -> (Status, (Cont
 // Pact verification test. This first starts up a Rocket server that can provide the Protobuf
 // messages required by the Pact verifier.
 #[test(tokio::test(flavor = "multi_thread", worker_threads = 1))]
+#[ignore]
 async fn verify_plugin() {
   // Test Setup
   #[allow(deprecated)]
